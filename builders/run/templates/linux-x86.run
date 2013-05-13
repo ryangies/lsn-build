@@ -1,0 +1,112 @@
+#!/bin/bash
+
+function usage () {
+  name=$(basename $0)
+  echo "usage:"
+  echo "  $name {install|uninstall|extract}"
+}
+
+script=
+opt_extract=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    install)
+      script='[#props/install || 'install/install.sh']'
+      ;;
+    uninstall)
+      script='[#props/uninstall || 'install/uninstall.sh']'
+      ;;
+    extract)
+      opt_extract=true
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ -z "$script" ] && ! $opt_extract; then
+  usage
+  exit 1
+fi
+
+skip=[#ctx/skip || 113]
+label='[#props/abstract || 'An unknown quantity']'
+res=4
+
+TMPROOT=${TMPDIR:=/tmp}
+TARGET_OS="Linux"
+TARGET_ARCH="x86"
+
+# Setup working and temporary directories
+rundir="`pwd`"
+workingdir="$TMPROOT/install$$"
+
+function ask_yn () {
+  local yn=false;
+  prompt="$1 [n] "
+  while true; do
+    read -p "$prompt" chr
+    case $chr in
+      [Yy]* ) yn=true; break;;
+      * ) yn=false; break;;
+    esac
+  done
+  if ($yn); then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function pause () {
+  prompt="Press [ENTER] to continue: "
+  read -p "$prompt" chr
+}
+
+untar_stdin () {
+  tar moxvf - 2> /dev/null || {
+    echo "Extraction failed." > /dev/tty; kill -15 $$;
+  };
+}
+
+if [ -e "$workingdir" ]; then
+  if (ask_yn "Delete the existing working directory: $workingdir"); then
+    rm -rf "$workingdir";
+    mkdir -p $workingdir
+  fi
+else
+  mkdir -p $workingdir
+fi
+
+res=3
+echo -n "Uncompressing: '$label'"
+cd $workingdir;
+
+trap 'echo; echo "Signal caught, cleaning up" > /dev/tty; cd $TMPROOT; rm -rf $workingdir; exit 15' 1 2 15
+
+if (cd "$rundir"; tail -n +$skip $0; ) | gzip -cd | untar_stdin | (while read a; do echo -n "."; done; echo; ); then
+  res=2
+  if ($opt_extract); then
+    echo "Extracted to: $workingdir"
+    exit 0
+  fi
+  if [ -f $script ]; then
+    /bin/bash $script
+    res=$?
+  else
+    echo "Missing script: $script"
+  fi
+else
+  echo "Cannot decompress: $0"
+  res=1
+fi
+
+echo "Finished."
+rm -rf $workingdir
+exit $res;
+END_OF_SCRIPT

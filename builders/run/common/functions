@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# This option dictates how the user-input functions work.  If set to false,
+# then we are running in silent mode, and default behaviours apply.
+opt_interactive=true
+
+# ------------------------------------------------------------------------------
+# say - Echo something to the terminal (unless we are in silent mode)
+# ------------------------------------------------------------------------------
+function say () {
+  if ($opt_interactive); then
+    echo "$*"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# ask - Prompt for input
+# ask 'Prompt'
+# ask 'Prompt' 'Default Value'
+#
+# In silent mode the default value is returned.
+#
+# Example for required input:
+#
+#   name=
+#   while ([ -z "$name" ]); do
+#     name=$(ask "What's your name?")
+#   done
+#   echo $name
+# ------------------------------------------------------------------------------
+function ask () {
+  local default_answer=$2;
+  if ($opt_interactive); then
+    if [ -z "$default_answer" ]; then
+      prompt="$1 "
+    else
+      prompt="$1 [$default_answer] "
+    fi
+    read -e -p "$prompt" user_answer
+    if [ -n "$user_answer" ]; then
+      echo $user_answer
+    else
+      echo $default_answer
+    fi
+  else
+    echo $default_answer
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# ask_yn - Ask a yes/no question
+# ask_yn 'Prompt'
+#
+# In silent mode, the default is yes (returns 1)
+# In interactive mode, the default is no (returns 0)
+# ------------------------------------------------------------------------------
+function ask_yn () {
+  local yn=false;
+  if ($opt_interactive); then
+    prompt="$1 [n] "
+    while true; do
+      read -p "$prompt" chr
+      case $chr in
+        [Yy]* ) yn=true; break;;
+        * ) yn=false; break;;
+      esac
+    done
+  else
+    yn=true
+  fi
+  if ($yn); then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# path_normalize - Normalize a path to its proper form
+# path_normalize 'un//normaliz/ed//path/'
+# Used to correct concatenations where slashes get doubled-up.
+# ------------------------------------------------------------------------------
+function path_normalize () {
+  path=$1
+  path=${path//\/\//\/}
+  path=${path%/}
+  echo $path
+}
+
+# ------------------------------------------------------------------------------
+# path_join - Join path segments with '/' where needed
+# ------------------------------------------------------------------------------
+function path_join () {
+  xIFS=$IFS
+  IFS='/'
+  path="$*"
+  IFS=$xIFS
+  echo $(path_normalize $path)
+}
+
+# ------------------------------------------------------------------------------
+# path_absolute - Return the absolute path to the node (must exist)
+# path_absolute '../relative/path'
+# ------------------------------------------------------------------------------
+function path_absolute () {
+  echo $(readlink -f "$1")
+}
+# ------------------------------------------------------------------------------
+# dir_absolute - Return the absolute path of the directory (must exist)
+# dir_absolute '../relative/path'
+# dir_absolute '~/path/to.file'
+# When the provided path is to a file, its directory is returned
+# ------------------------------------------------------------------------------
+function dir_absolute () {
+  path=
+  if [ -d "$1" ]; then
+    path=$(readlink -f "$1")
+  elif [ -f "$1" ]; then
+    path=$(dirname "$(readlink -f "$1")")
+  fi
+  echo $path
+}
+
+# ------------------------------------------------------------------------------
+# most_recent - Return the path of the most recent file entry (must exist)
+# most_recent '/var/backup/localhost/2010'
+# most_recent 'backup.tgz.'
+# 
+# The logic of "most recent" refers the number in the filename, not the file's
+# time stamp.  That is, file.bak2 is "more recent" than file.bak1, even if 
+# file.bak1 was updated after file.bak2.
+# ------------------------------------------------------------------------------
+function most_recent () {
+  path=""
+  fn=$(basename "$1")
+  dir=$(readlink -f "$(dirname "$1")")
+  path=$(find "$dir" -name "$fn*" | sort -n | tail -1)
+  echo $path
+}
+
+# ------------------------------------------------------------------------------
+# exit_unless_root_user - Exit (1) unless UID of the current user is zero (0)
+# ------------------------------------------------------------------------------
+function exit_unless_root_user () {
+  if [ "$(id -u)" -ne "0" ]; then
+    echo "Only the root user should run these commands."
+    exit 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Notes
+# 
+#   Spaces in your filename? Use `ls -Q` to quote them:
+#     for i in `ls -Q`; do echo $i; done
+# ------------------------------------------------------------------------------

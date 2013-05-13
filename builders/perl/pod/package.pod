@@ -1,0 +1,108 @@
+=head1 NAME
+
+{#name} - {#summary}
+
+=head1 SYNOPSIS
+
+{#synopsis}
+
+=head1 EXPORTS
+
+{#export || 'Nothing exported by default'}
+
+=over
+
+{#:if export_ok}
+=item Exported upon request
+
+{#export_ok}
+
+{#:end if}
+
+{#:for (tag, str) in export_tags}
+=item :{#tag}
+
+{#str}
+
+{#:end for}
+
+=back
+
+{#:if depends}
+=head1 DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+{#:for (name,ver) in depends}
+    {#name}{#:if ver gt 0} v{#ver}{#:end if}
+{#:end for}
+
+{#:end if}
+=head1 DESCRIPTION
+
+{#description}
+
+{#:if tests}
+=head1 EXAMPLES
+
+{#:for tests}
+{#./case_{#comparator}.pod}
+{#:end for}
+{#:end if}
+
+{#:if methods/public}
+=head1 PUBLIC INTERFACE
+{#:for (method) in methods/public}
+
+{#pod_method}
+
+{#:end for}
+{#:end if}
+
+{#:if methods/private}
+=head1 PACKAGE INTERNALS
+{#:for (method) in methods/private}
+
+{#pod_method}
+
+{#:end for}
+{#:end if}
+
+{#:if seealso}
+=head1 SEE ALSO
+
+{#seealso}
+
+{#:end if}
+
+=head1 AUTHORS
+
+{#/src/share/build/about/lsn/authors.txt}
+
+=head1 COPYRIGHT
+
+{#/src/share/build/about/lsn/copyright.txt}
+
+{#/src/share/build/about/lsn/warranty.txt}
+
+=cut
+
+__DATA__
+
+pod_method => ${
+=head2 {#method/name}
+
+=over
+
+=item {#method/summary}
+
+{#method/usage}
+
+{#method/description}
+
+{#:for method/tests}
+{#./case_{#comparator}.pod}
+{#:end for}
+
+=back
+}

@@ -1,0 +1,32 @@
+[#target] - [#props/abstract]
+version [#lib_version]
+================================================================================
+
+INSTALLATION
+------------
+
+To install this module type the following:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+DEPENDENCIES
+------------
+
+This module requires these other modules and libraries:
+
+[#:for (name,ver) in props/depends]
+    [#name][#:if ver gt 0] v[#ver][#:end if]
+[#:end for]
+
+AUTHORS
+-------
+
+[#/src/share/build/about/lsn/authors.txt]
+
+COPYRIGHT AND LICENSE
+---------------------
+
+[#/src/share/build/about/lsn/copyright.txt]

@@ -1,0 +1,3 @@
+This example {#invert ? 'will B<not>' : 'will'} abort:
+
+{#./test_code.pod}

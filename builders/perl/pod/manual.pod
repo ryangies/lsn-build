@@ -1,0 +1,29 @@
+=head1 NAME
+
+{#name} - {#summary}
+
+{#:for section in sections}
+
+=head1 {#section/name}
+
+{#section/text}
+
+{#:end for}
+
+=head1 AUTHOR
+
+{#props/authors}
+
+=head1 COPYRIGHT
+
+{#props/copyright/lsnllc}
+
+{#props/copyright/perl}
+
+{#props/warranty.txt}
+
+=head1 UPDATED
+
+{#./util/datetime.pm -notime="1"}
+
+=cut

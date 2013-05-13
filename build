@@ -1,0 +1,327 @@
+#!/usr/bin/perl -w
+package Local::App::Build;
+use lib qq(src/lib/perl);
+use strict;
+use Perl::Module;
+use Error::Programatic;
+use Data::OrderedHash;
+use Data::Hub;
+use Data::Hub::Util qw(:all);
+use Parse::Template::Standard;
+use base 'App::Console::CommandScript';
+
+our %USAGE = ();
+
+# ------------------------------------------------------------------------------
+# new - Constructor
+# new $cwd, $bin_path
+# where:
+#   $cwd_path     The caller's working directory (exit directory)
+#   $bin_path     The directory of this app (where builders are found)
+# ------------------------------------------------------------------------------
+
+sub new {
+  my $self = shift->SUPER::new();
+  $self->{'cwd_path'} = shift;
+  $self->{'bin_path'} = shift;
+  $self->{'cwd'} = Data::Hub->new($self->{'cwd_path'});
+  $self->{'bin'} = Data::Hub->new($self->{'bin_path'});
+  $self;
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'test'} = {
+  summary => 'Run tests',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+sub test {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
+    my ($spec, $pm, $builder) = @$worker;
+    $self->_invoke('compile', $worker);
+    if (my $test_script = $$builder{test_script}) {
+      $self->printf("%_bs\n", 'Testing: ' . $$builder{cname});
+      $self->print(`$test_script`);
+    } else {
+      $self->warn("No test script for: $$builder{cname}\n");
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'compile'} = {
+  summary => 'Compile the project',
+  params => Data::OrderedHash->new(
+    '-bump' => 'Bump the revision number',
+    '-force' => 'Remove and recompile if the output directory exists',
+  ),
+};
+
+sub compile {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
+    $self->_compile($worker, -opts => $opts);
+  }
+}
+
+sub _compile {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $worker = shift;
+  my ($spec, $pm, $builder) = @$worker;
+  my $out_path = $builder->{'out_path'};
+  my $opts_str = join ' ', map {sprintf('-%s=%s', $_, $$opts{$_})} keys %$opts;
+
+  if ((!-d $out_path) || $$opts{'force'}) {
+
+    # Re-build if needed
+    dir_remove $out_path;
+
+    # Run pre-compile commands
+    if (my $pre_compile = $$spec{'pre_compile'}) {
+      foreach my $cmd (@$pre_compile) {
+        $cmd =~ s/\[#options\]/$opts_str/;
+        warn "Running [pre-compile]: $cmd\n";
+        system split(/ /, $cmd);
+      }
+    }
+
+    # Compile
+    warnf "Compiling: %s...\n", $$builder{'cname'};
+    $self->_invoke('compile', $worker);
+
+    # File-system has changed
+    $$builder{'hub'}->expire;
+
+    # Populate templated files
+    if (my $parse_files = $$spec{'parse_files'}) {
+      my %vars = map {$_ => $builder->{$_}}
+        qw(cname name version spec proj_path out_path);
+      foreach my $subpath (@$parse_files) {
+        my $path = path_normalize("$out_path/$subpath");
+        $self->_file_populate($builder, $path, \%vars);
+      }
+    }
+
+    # Run post-compile commands
+    if (my $post_compile = $$spec{'post_compile'}) {
+      foreach my $cmd (@$post_compile) {
+        $cmd =~ s/\[#options\]/$opts_str/;
+        warn "Running [post-compile]: $cmd\n";
+        system split(/ /, $cmd);
+      }
+    }
+
+  }
+
+  if (-d $out_path) {
+    printf "%s\n", $out_path;
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'dist'} = {
+  summary => 'Build distribution packages',
+  params => Data::OrderedHash->new(
+    '-bump' => 'Bump the revision number',
+    '-force' => 'Remove and recompile if the output directory exists',
+  ),
+};
+
+sub dist {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
+    my ($spec, $pm, $builder) = @$worker;
+    $self->_compile($worker, -opts => $opts);
+    warnf "Packaging: %s...\n", $$builder{'cname'};
+    $self->_invoke('dist', $worker);
+    my $dist_fn = $builder->{'dist_fn'};
+    if (defined $dist_fn && -f $dist_fn) {
+      printf "%s\n", $builder->{'dist_fn'};
+    } else {
+      $self->error("Builder did not create a distribution file");
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'upload'} = {
+  summary => 'Upload distribution files',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+sub upload {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
+    my ($spec, $pm, $builder) = @$worker;
+    warnf "Uploading: %s...\n", $$builder{'cname'};
+    $self->_invoke('upload', $worker);
+  }
+}
+
+# ------------------------------------------------------------------------------
+# _get_workers - Create builder objects for each build spec
+# _get_workers
+# _get_workers -bump
+# ------------------------------------------------------------------------------
+
+sub _get_workers {
+  my $self = shift;
+  my $opts = my_opts(\@_, {'bump' => 0});
+  my $bump = [0, 0, $$opts{'bump'}];
+  my @workers = ();
+  foreach my $file ($self->_get_specs(@_)) {
+    my $proj_path = path_parent($file->get_path);
+    my $name = $file->{'name'} || path_basename($proj_path);
+    my $type = $file->{'builder'} or die "Build spec has no builder: $name";
+    my $work_dir = $$self{'bin'}->get('/builders/' . $type);
+    my $pm = $work_dir->{'module.pm'} or die "Builder failed to load: $name ($type)";
+    my $version = $self->_get_version($file, $bump);
+    my $out_base = path_normalize($proj_path . '/out');
+    my $out_dirname = sprintf '%s-%s', $name, $version;
+    my $out_path = sprintf '%s/%s', $out_base, $out_dirname;
+    my $hub = Data::Hub->new($proj_path);
+    my $builder = $pm->{'new'}(
+      cname => $out_dirname, # canonical name
+      name => $name,
+      version => $version,
+      spec => $file,
+      hub => $hub,
+      proj_path => $proj_path,
+      work_dir => $work_dir,
+      work_path => $work_dir->get_path,
+      out_base_path => $out_base,
+      out_path => $out_path,
+      dist_fn => undef, # builder should set this when done
+      parser => Parse::Template::Standard->new($hub),
+    );
+    push @workers, [$file, $pm, $builder];
+  }
+  @workers;
+}
+
+# ------------------------------------------------------------------------------
+# _get_specs - Return nodes for the specified build-spec files
+# _get_specs
+# _get_specs $addr
+# _get_specs @addrs
+# ------------------------------------------------------------------------------
+
+sub _get_specs {
+  my $self = shift;
+  my @specs = ();
+  if (!@_) {
+    my $filename = 'project.hf';
+    my $spec = $$self{'cwd'}->get($filename)
+      or $self->fail("Cannot find build-spec: $filename");
+    push @specs, $spec;
+  } else {
+    for (@_) {
+      my $file = $$self{'cwd'}->get("$_") or
+        $self->fail("Cannot find build-spec: $_");
+      push @specs, $file;
+    }
+  }
+  @specs;
+}
+
+# ------------------------------------------------------------------------------
+# _get_version - Parse the version-number array into a string
+# _get_version $file
+# _get_version $file, \@bump
+# ------------------------------------------------------------------------------
+
+sub _get_version {
+  my $self = shift;
+  my $file = shift;
+  my $bump = shift;
+  my $version = $file->{version} or return '0';
+  if (isa($version, 'ARRAY')) {
+    # Normal version array.  Three parts: major, minor, and revision
+    if ($bump) {
+      my $sum = 0;
+      $sum += $_ for (@$bump);
+      if ($sum > 0) {
+        $$version[0] += $$bump[0];
+        $$version[1] += $$bump[1];
+        $$version[2] += $$bump[2];
+        $file->save();
+      }
+    }
+    return sprintf '%02d.%02d%03d', @$version;
+  } else {
+    # Scalar version number (like "b12")
+    if ($bump) {
+      my $sum = 0;
+      $sum += $_ for (@$bump);
+      if ($sum > 0) {
+        $version =~ s/([\d]+)/\%s/ or die "Cannot increment version: $version";
+        my ($num) = $1;
+        my $width = length($num);
+        $num = sprintf '%0' . $width . 'd', $num + $sum;
+        $version = sprintf $version, $num;
+        $file->set('version', $version);
+        $file->save();
+      }
+    }
+    return $version;
+  }
+}
+
+# ------------------------------------------------------------------------------
+# _invoke - Invoke a builder's method
+# _invoke $worker
+# ------------------------------------------------------------------------------
+
+sub _invoke {
+  my $self = shift;
+  my $sub_name = shift;
+  my $worker = shift;
+  my ($spec, $pm, $builder) = @$worker;
+  # We are calling $sub_name of the $builder class in such a way that the 
+  # address './' will return the builder's directory.
+  die "Method '$sub_name' not implemented!" unless $pm->{$sub_name};
+  $pm->{$sub_name}($builder);
+}
+
+1;
+
+# ------------------------------------------------------------------------------
+# _file_populate - Parse the given file and write output back to the file
+# _file_populate $path
+# ------------------------------------------------------------------------------
+
+sub _file_populate {
+  my $self = shift;
+  my $builder = shift;
+  my $path = shift or return;
+  my $addr = $$builder{'hub'}->path_to_addr($path) or die "Cannot find: $path\n";
+  warn "Parsing: $path\n";
+	my $out = $$self{'parser'}->compile($addr, @_);
+  die unless $$out;
+  chomp $$out; $$out .= "\n";
+  file_write($path, $out);
+}
+
+
+# ==============================================================================
+
+package main;
+use FindBin;
+use Cwd qw(cwd);
+use Data::Hub::Util qw(:all);
+
+my $cwd = cwd();
+my $bin_path = $FindBin::Bin;
+Local::App::Build->new($cwd, $bin_path)->exec(@ARGV);

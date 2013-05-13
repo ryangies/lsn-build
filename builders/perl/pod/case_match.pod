@@ -1,0 +1,8 @@
+This example:
+
+{#./test_code.pod}
+
+I<{#invert ? 'will B<not> match' : 'will return'}>:
+
+{#:pod:indent result 2}
+
