@@ -77,13 +77,13 @@ This module requires these other modules and libraries:
 
 =head1 AUTHORS
 
-{#/src/share/build/about/lsn/authors.txt}
+{#props/about/authors.txt}
 
 =head1 COPYRIGHT
 
-{#/src/share/build/about/lsn/copyright.txt}
+{#props/about/copyright.txt}
 
-{#/src/share/build/about/lsn/warranty.txt}
+{#props/about/warranty.txt}
 
 =cut
 

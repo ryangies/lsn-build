@@ -24,9 +24,9 @@ This module requires these other modules and libraries:
 AUTHORS
 -------
 
-[#/src/share/build/about/lsn/authors.txt]
+[#props/about/authors.txt]
 
 COPYRIGHT AND LICENSE
 ---------------------
 
-[#/src/share/build/about/lsn/copyright.txt]
+[#props/about/copyright.txt]

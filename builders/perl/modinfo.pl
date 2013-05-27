@@ -1,13 +1,15 @@
 #!/usr/bin/perl
 use strict;
-use Data::Hub qw($Hub);
+use Data::Hub;
 use Perl::ModuleInfo;
 
+my $hub_path = shift @ARGV;
 my $lib_path = shift @ARGV;
+my $hub = Data::Hub->new($hub_path);
 my $info = Perl::ModuleInfo->new();
 
 foreach my $path (@ARGV) {
   $info->parse($lib_path, $path);
 }
 
-$Hub->set('modinfo.hf', $info)->save();
+$hub->set('modinfo.yml', $info)->save();

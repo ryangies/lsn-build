@@ -5,7 +5,6 @@ use Perl::Module;
 use Data::Hub;
 use Data::Hub::Util qw(:all);
 use Parse::Template::Standard;
-use Perl::ModuleInfo;
 use Pod::Html;
 
 # ------------------------------------------------------------------------------
@@ -27,13 +26,13 @@ sub new {
 sub compile {
   my $self = shift;
 
-  my $out_path = $self->{out_path};
-  my $root = $self->{proj_path};
-  my $work_path = $self->{work_path};
-  my $src_dir = $self->{spec}{'src_dir'};
-  my $src_files = $self->{spec}{'src_files'};
-  my $scripts = $self->{spec}{'scripts'};
-  my $skel = $self->{spec}{'skel'} || 'module-install';
+  my $out_path = $self->{'out_path'};
+  my $root = $self->{'proj_path'};
+  my $work_path = $self->{'work_path'};
+  my $src_dir = $self->{'spec'}{'src_dir'};
+  my $src_files = $self->{'spec'}{'src_files'};
+  my $scripts = $self->{'spec'}{'scripts'};
+  my $skel = $self->{'spec'}{'skel'} || 'module-install';
 
   # Seed the output directory
   dir_copy "$work_path/skel/$skel", $out_path;
@@ -93,18 +92,19 @@ sub compile {
   # Recognize file-system changes
   $$self{'hub'}->expire;
 
-  # Build 
-  $self->_build_docs_and_tests($src_files);
-
-  # Populate templated files
-  $$self{'hub'}->expire;
+  # Local build properties
   my $ctx_vars =  {
-    props => $self->{spec},
-    lib_version => $self->{version},
-    target => $self->{name},
+    props => $self->{'spec'},
+    lib_version => $self->{'version'},
+    target => $self->{'name'},
     out_dir => $out_path,
   };
 
+  # Build 
+  $self->_build_docs_and_tests($src_files, $ctx_vars);
+
+  # Populate templated files
+  $$self{'hub'}->expire;
   $self->_file_populate("$out_path/MANIFEST", $ctx_vars);
   $self->_file_populate("$out_path/README", $ctx_vars);
   $self->_file_populate("$out_path/Makefile.PL", $ctx_vars);
@@ -133,23 +133,22 @@ sub _build_docs_and_tests {
 
   my $self = shift;
   my $src_files = shift;
-  my $out_path = $self->{out_path};
+  my $ctx_vars = shift;
+  my $out_path = $self->{'out_path'};
   my $out_addr = $$self{'hub'}->path_to_addr($out_path);
   my $lib = $$self{'hub'}->get("$out_addr/lib") or die "Missing: $out_addr/lib\n";
 
+  # The module info is extracted in a separate call as it re-requires our
+  # library modules. (no warnings redefine)
   my $lib_path = $lib->get_path;
-  my $info = Perl::ModuleInfo->new();
-
-  foreach my $path (@$src_files) {
-    $info->parse($lib_path, $path);
-  }
-
-  $$self{'hub'}->set('modinfo.hf', $info)->save();
-
+  my $hub_path = $$self{'hub'}->get_fs_root->get_path,
+  my $modinfo_pl = $self->{'work_path'} . '/modinfo.pl';
+  system '/usr/bin/perl', $modinfo_pl, $hub_path, $lib_path, @$src_files;
   $$self{'hub'}->expire;
+  my $info = $$self{'hub'}->get('modinfo.yml');
 
-  my $tests = $info->{tests};
-  my $docs = $info->{docs};
+  my $tests = $info->{'tests'};
+  my $docs = $info->{'docs'};
 
   # Setup the POD parser.  In the ./pod directory there are
   # templates for building the .pod file, and uses information parsed
@@ -160,12 +159,15 @@ sub _build_docs_and_tests {
     -end => '}',
     -out => \$pod_out,
   );
+
+  $pod_parser->use($ctx_vars);
+
   $pod_parser->set_directive('pod', {
     indent => [sub {
       my ($parser, $name, $addr, $len) = @_;
       my $value = $parser->get_compiled_value(\$addr);
       return unless defined $value;
-      $parser->get_ctx->{collapse} = 0;
+      $parser->get_ctx->{'collapse'} = 0;
       my $prefix = ' ' x $len;
       if (!ref($value)) {
         $value =~ s/^(.*)$/$prefix$1/gm;
@@ -174,43 +176,49 @@ sub _build_docs_and_tests {
     }],
   });
 
-  my $doc_dir = $self->{proj_path} . '/src/doc/lib/perl';
+# my $doc_dir = $self->{'proj_path'} . '/src/doc/lib/perl';
+  my $doc_dir = addr_join($out_path, 'docs');
+
+  if (! -d $doc_dir) {
+    dir_create($doc_dir);
+  }
 
   $info->get('docs')->iterate(sub {
     my ($idx, $pkg) = @_;
     $pod_out = '';
-    my $pn = $pkg->{name};
+    my $pn = $pkg->{'name'};
     $pn =~ s/::/-/g;
-    my $fn = $pkg->{name};
+    my $fn = $pkg->{'name'};
     $fn =~ s/::/\//g;
     $pod_parser->compile("./pod/package.pod", $pkg);
     $$self{'hub'}->set("$out_addr/lib/$fn.pod", $pod_out)->save();
-    _pod2html("$out_path/lib/$fn.pod", "$doc_dir/$pn.html", $pkg->{name});
+    _pod2html("$out_path/lib/$fn.pod", "$doc_dir/$pn.html", $pkg->{'name'});
   });
 
   # Cleanup temporary files
   file_remove("pod2htmd.tmp");
   file_remove("pod2htmi.tmp");
-  file_remove("modinfo.hf");
+  file_remove("modinfo.yml");
 
   # Set up a template parser
+  my $work_parser = Parse::Template::Standard->new($$self{'work_dir'});
   my $vars = { testcases => $tests, lib_dirs => [qw(../lib)], tcount => scalar(@$tests) };
 
   # Create stand-alone test harness
   {
     my $test_addr = "$out_addr/t/full.pl";
     my $out_str = '';
-    $self->{parser}->compile("./test/harness.pl", $vars, -out => \$out_str);
+    $work_parser->compile("/test/harness.pl", $vars, -out => \$out_str);
     my $file = $$self{'hub'}->set($test_addr, $out_str)->save();
     chmod 0755, $file->get_path;
-    $self->{test_script} = $file->get_path;
+    $self->{'test_script'} = $file->get_path;
   }
 
   # Create install tests
   {
     my $out_str = '';
     my $out_fn = sprintf '%s/t/full.t', $out_addr;
-    $self->{parser}->compile("./test/test-more.t", $vars, -out => \$out_str);
+    $work_parser->compile("/test/test-more.t", $vars, -out => \$out_str);
     $$self{'hub'}->set($out_fn, $out_str)->save;
   }
 
@@ -238,7 +246,7 @@ sub _file_populate {
   my $self = shift;
   my $path = shift or return;
   my $addr = $$self{'hub'}->path_to_addr($path) or die "Cannot find: $path\n";
-	my $out = $self->{parser}->compile($addr, @_);
+	my $out = $self->{'parser'}->compile($addr, @_);
   die unless $$out;
   chomp $$out; $$out .= "\n";
   file_write($path, $out);
