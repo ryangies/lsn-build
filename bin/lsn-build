@@ -14,18 +14,18 @@ our %USAGE = ();
 
 # ------------------------------------------------------------------------------
 # new - Constructor
-# new $cwd, $bin_path
+# new $cwd, $app_path
 # where:
 #   $cwd_path     The caller's working directory (exit directory)
-#   $bin_path     The directory of this app (where builders are found)
+#   $app_path     The directory of this app (where builders are found)
 # ------------------------------------------------------------------------------
 
 sub new {
   my $self = shift->SUPER::new();
   $self->{'cwd_path'} = shift;
-  $self->{'bin_path'} = shift;
+  $self->{'app_path'} = shift;
   $self->{'cwd'} = Data::Hub->new($self->{'cwd_path'});
-  $self->{'bin'} = Data::Hub->new($self->{'bin_path'});
+  $self->{'app'} = Data::Hub->new($self->{'app_path'});
   $self;
 }
 
@@ -185,7 +185,7 @@ sub _get_workers {
     my $proj_path = path_parent($file->get_path);
     my $name = $file->{'name'} || path_basename($proj_path);
     my $type = $file->{'builder'} or die "Build spec has no builder: $name";
-    my $work_dir = $$self{'bin'}->get('/builders/' . $type);
+    my $work_dir = $$self{'app'}->get('/builders/' . $type);
     my $pm = $work_dir->{'module.pm'} or die "Builder failed to load: $name ($type)";
     my $version = $self->_get_version($file, $bump);
     my $out_base = path_normalize($proj_path . '/out');
@@ -323,5 +323,5 @@ use Cwd qw(cwd);
 use Data::Hub::Util qw(:all);
 
 my $cwd = cwd();
-my $bin_path = $FindBin::Bin;
-Local::App::Build->new($cwd, $bin_path)->exec(@ARGV);
+my $app_path = path_parent($FindBin::Bin);
+Local::App::Build->new($cwd, $app_path)->exec(@ARGV);
