@@ -20,7 +20,11 @@ my $builder = Module::Build->new(
       '[#name]' => [#ver],
       [#:end for]
     },
-    # TODO scripts/*
+    script_files => [
+      [#:for (name,file) in "props/scripts"]
+      'scripts/[#name]',
+      [#:end for]
+    ],
     # TODO add_to_cleanup      => [ 'Algorithm-KeyGen-*' ],
 );
 

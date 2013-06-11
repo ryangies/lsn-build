@@ -59,6 +59,7 @@ $USAGE{'compile'} = {
   params => Data::OrderedHash->new(
     '-bump' => 'Bump the revision number',
     '-force' => 'Remove and recompile if the output directory exists',
+    '-out' => 'Alternate output directory',
   ),
 };
 
@@ -78,26 +79,31 @@ sub _compile {
   my $out_path = $builder->{'out_path'};
   my $opts_str = join ' ', map {sprintf('-%s=%s', $_, $$opts{$_})} keys %$opts;
 
-  if ((!-d $out_path) || $$opts{'force'}) {
+  if (($$builder{'is_new_build'}) || $$opts{'force'}) {
 
-    # Re-build if needed
-    dir_remove $out_path;
+    # Re-build as needed
+    dir_remove_contents $out_path;
 
     # Run pre-compile commands
     if (my $pre_compile = $$spec{'pre_compile'}) {
+      chdir $$builder{'proj_path'};
       foreach my $cmd (@$pre_compile) {
         $cmd =~ s/\[#options\]/$opts_str/;
         warn "Running [pre-compile]: $cmd\n";
         system split(/ /, $cmd);
       }
+      chdir $$self{'cwd_path'};
     }
+
+    # File-system has changed
+    $$builder{'hub'}->expire;
 
     # Compile
     warnf "Compiling: %s...\n", $$builder{'cname'};
     $self->_invoke('compile', $worker);
 
     # File-system has changed
-    $$builder{'hub'}->expire;
+    $$builder{'out_hub'}->expire;
 
     # Populate templated files
     if (my $parse_files = $$spec{'parse_files'}) {
@@ -132,6 +138,7 @@ $USAGE{'dist'} = {
   params => Data::OrderedHash->new(
     '-bump' => 'Bump the revision number',
     '-force' => 'Remove and recompile if the output directory exists',
+    '-out' => 'Alternate output directory',
   ),
 };
 
@@ -157,6 +164,7 @@ sub dist {
 $USAGE{'upload'} = {
   summary => 'Upload distribution files',
   params => Data::OrderedHash->new(
+    '-out' => 'Alternate output directory',
   ),
 };
 
@@ -178,19 +186,25 @@ sub upload {
 
 sub _get_workers {
   my $self = shift;
-  my $opts = my_opts(\@_, {'bump' => 0});
+  my $opts = my_opts(\@_, {'bump' => 0, 'out' => undef});
   my $bump = [0, 0, $$opts{'bump'}];
   my @workers = ();
   foreach my $file ($self->_get_specs(@_)) {
     my $proj_path = path_parent($file->get_path);
     my $name = $file->{'name'} || path_basename($proj_path);
     my $type = $file->{'builder'} or die "Build spec has no builder: $name";
-    my $work_dir = $$self{'app'}->get('/builders/' . $type);
-    my $pm = $work_dir->{'module.pm'} or die "Builder failed to load: $name ($type)";
+    my $builder_dir = $$self{'app'}->get('/builders/' . $type);
+    my $common_dir = $$self{'app'}->get('/common');
+    my $pm = $builder_dir->{'module.pm'} or die "Builder failed to load: $name ($type)";
     my $version = $self->_get_version($file, $bump);
-    my $out_base = path_normalize($proj_path . '/out');
+    my $out_base = $$opts{'out'}
+      ? path_join($$self{'cwd_path'}, $$opts{'out'})
+      : path_join($proj_path, 'out');
     my $out_dirname = sprintf '%s-%s', $name, $version;
     my $out_path = sprintf '%s/%s', $out_base, $out_dirname;
+    my $out_exists = -d $out_path;
+    dir_create($out_path) unless $out_exists;
+    my $out_hub = Data::Hub->new($out_path);
     my $hub = Data::Hub->new($proj_path);
     my $builder = $pm->{'new'}(
       cname => $out_dirname, # canonical name
@@ -199,12 +213,15 @@ sub _get_workers {
       spec => $file,
       hub => $hub,
       proj_path => $proj_path,
-      work_dir => $work_dir,
-      work_path => $work_dir->get_path,
+      common_dir => $common_dir,
+      builder_dir => $builder_dir,
+      builder_path => $builder_dir->get_path,
       out_base_path => $out_base,
+      is_new_build => !$out_exists,
       out_path => $out_path,
+      out_hub => $out_hub,
       dist_fn => undef, # builder should set this when done
-      parser => Parse::Template::Standard->new($hub),
+      parser => Parse::Template::Standard->new($out_hub),
     );
     push @workers, [$file, $pm, $builder];
   }
@@ -221,17 +238,12 @@ sub _get_workers {
 sub _get_specs {
   my $self = shift;
   my @specs = ();
-  if (!@_) {
-    my $filename = 'project.hf';
-    my $spec = $$self{'cwd'}->get($filename)
-      or $self->fail("Cannot find build-spec: $filename");
-    push @specs, $spec;
-  } else {
-    for (@_) {
-      my $file = $$self{'cwd'}->get("$_") or
-        $self->fail("Cannot find build-spec: $_");
-      push @specs, $file;
-    }
+  unshift @_, 'project.hf' unless @_;
+  for (@_) {
+    my $path = path_join($$self{'cwd_path'}, $_);
+    my $file = FS('Node')->new($path) or
+      $self->fail("Cannot find build-spec: $path");
+    push @specs, $file;
   }
   @specs;
 }
@@ -306,9 +318,9 @@ sub _file_populate {
   my $self = shift;
   my $builder = shift;
   my $path = shift or return;
-  my $addr = $$builder{'hub'}->path_to_addr($path) or die "Cannot find: $path\n";
+  my $addr = $$builder{'out_hub'}->path_to_addr($path) or die "Cannot find: $path\n";
   warn "Parsing: $path\n";
-	my $out = $$self{'parser'}->compile($addr, @_);
+	my $out = $$builder{'parser'}->compile($addr, @_);
   die unless $$out;
   chomp $$out; $$out .= "\n";
   file_write($path, $out);

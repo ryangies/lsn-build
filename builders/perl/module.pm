@@ -28,14 +28,14 @@ sub compile {
 
   my $out_path = $self->{'out_path'};
   my $root = $self->{'proj_path'};
-  my $work_path = $self->{'work_path'};
+  my $builder_path = $self->{'builder_path'};
   my $src_dir = $self->{'spec'}{'src_dir'};
   my $src_files = $self->{'spec'}{'src_files'};
   my $scripts = $self->{'spec'}{'scripts'};
   my $skel = $self->{'spec'}{'skel'} || 'module-install';
 
   # Seed the output directory
-  dir_copy "$work_path/skel/$skel", $out_path;
+  dir_copy_contents "$builder_path/skel/$skel", $out_path;
 
   # Special case when src_files is 'ALL'
   if (!ref($src_files)) {
@@ -135,17 +135,15 @@ sub _build_docs_and_tests {
   my $src_files = shift;
   my $ctx_vars = shift;
   my $out_path = $self->{'out_path'};
-  my $out_addr = $$self{'hub'}->path_to_addr($out_path);
-  my $lib = $$self{'hub'}->get("$out_addr/lib") or die "Missing: $out_addr/lib\n";
+  my $lib = $$self{'out_hub'}->get("/lib") or die "Missing: `lib` under $out_path\n";
 
   # The module info is extracted in a separate call as it re-requires our
   # library modules. (no warnings redefine)
   my $lib_path = $lib->get_path;
-  my $hub_path = $$self{'hub'}->get_fs_root->get_path,
-  my $modinfo_pl = $self->{'work_path'} . '/modinfo.pl';
-  system '/usr/bin/perl', $modinfo_pl, $hub_path, $lib_path, @$src_files;
-  $$self{'hub'}->expire;
-  my $info = $$self{'hub'}->get('modinfo.yml');
+  my $modinfo_pl = $self->{'builder_path'} . '/modinfo.pl';
+  system '/usr/bin/perl', $modinfo_pl, $out_path, $lib_path, @$src_files;
+  $$self{'out_hub'}->expire;
+  my $info = $$self{'out_hub'}->get('modinfo.yml');
 
   my $tests = $info->{'tests'};
   my $docs = $info->{'docs'};
@@ -153,16 +151,15 @@ sub _build_docs_and_tests {
   # Setup the POD parser.  In the ./pod directory there are
   # templates for building the .pod file, and uses information parsed
   # by Perl::ModuleInfo.
-  my $pod_out = '';
-  my $pod_parser = Parse::Template::Standard->new($$self{'hub'},
+  my $template_parser = Parse::Template::Standard->new(
+    Data::Hub->new($$self{'builder_path'}),
     -begin => '{#',
     -end => '}',
-    -out => \$pod_out,
   );
 
-  $pod_parser->use($ctx_vars);
+  $template_parser->use($ctx_vars);
 
-  $pod_parser->set_directive('pod', {
+  $template_parser->set_directive('pod', {
     indent => [sub {
       my ($parser, $name, $addr, $len) = @_;
       my $value = $parser->get_compiled_value(\$addr);
@@ -176,8 +173,7 @@ sub _build_docs_and_tests {
     }],
   });
 
-# my $doc_dir = $self->{'proj_path'} . '/src/doc/lib/perl';
-  my $doc_dir = addr_join($out_path, 'docs');
+  my $doc_dir = path_join($out_path, 'docs');
 
   if (! -d $doc_dir) {
     dir_create($doc_dir);
@@ -185,31 +181,39 @@ sub _build_docs_and_tests {
 
   $info->get('docs')->iterate(sub {
     my ($idx, $pkg) = @_;
-    $pod_out = '';
-    my $pn = $pkg->{'name'};
-    $pn =~ s/::/-/g;
-    my $fn = $pkg->{'name'};
-    $fn =~ s/::/\//g;
-    $pod_parser->compile("./pod/package.pod", $pkg);
-    $$self{'hub'}->set("$out_addr/lib/$fn.pod", $pod_out)->save();
+    my $pn = $pkg->{'name'}; $pn =~ s/::/-/g;
+    my $fn = $pkg->{'name'}; $fn =~ s/::/\//g;
+    my $pod_out = $template_parser->compile("/pod/package.pod", $pkg);
+    $$self{'out_hub'}->set("/lib/$fn.pod", $pod_out)->save();
     _pod2html("$out_path/lib/$fn.pod", "$doc_dir/$pn.html", $pkg->{'name'});
+    $$pkg{'html_filename'} = "$pn.html"; # for index.html template
   });
+
+  # Create documentation index
+  file_write("$doc_dir/index.html",
+    $template_parser->compile("/docs/index.html", $info)
+  );
+
+  # Copy stylesheet
+  file_copy(
+    path_join($$self{'builder_path'}, 'docs/styles.css'),
+    "$doc_dir/styles.css"
+  );
 
   # Cleanup temporary files
   file_remove("pod2htmd.tmp");
   file_remove("pod2htmi.tmp");
-  file_remove("modinfo.yml");
 
   # Set up a template parser
-  my $work_parser = Parse::Template::Standard->new($$self{'work_dir'});
+  my $builder_parser = Parse::Template::Standard->new($$self{'builder_dir'});
   my $vars = { testcases => $tests, lib_dirs => [qw(../lib)], tcount => scalar(@$tests) };
 
   # Create stand-alone test harness
   {
-    my $test_addr = "$out_addr/t/full.pl";
+    my $test_addr = "/t/full.pl";
     my $out_str = '';
-    $work_parser->compile("/test/harness.pl", $vars, -out => \$out_str);
-    my $file = $$self{'hub'}->set($test_addr, $out_str)->save();
+    $builder_parser->compile("/test/harness.pl", $vars, -out => \$out_str);
+    my $file = $$self{'out_hub'}->set($test_addr, $out_str)->save();
     chmod 0755, $file->get_path;
     $self->{'test_script'} = $file->get_path;
   }
@@ -217,21 +221,19 @@ sub _build_docs_and_tests {
   # Create install tests
   {
     my $out_str = '';
-    my $out_fn = sprintf '%s/t/full.t', $out_addr;
-    $work_parser->compile("/test/test-more.t", $vars, -out => \$out_str);
-    $$self{'hub'}->set($out_fn, $out_str)->save;
+    $builder_parser->compile("/test/test-more.t", $vars, -out => \$out_str);
+    $$self{'out_hub'}->set('/t/full.t', $out_str)->save;
   }
 
 }
 
 sub _pod2html {
   my ($podfn, $htmlfn, $title) = @_;
-  my $cssfn = 'styles.css';
   pod2html( 
     '--flush',
     '--backlink=Top',
     "--title=$title",
-    "--css=$cssfn",
+    "--css=styles.css",
     "--infile=$podfn",
     "--outfile=$htmlfn"
   );
@@ -245,9 +247,9 @@ sub _pod2html {
 sub _file_populate {
   my $self = shift;
   my $path = shift or return;
-  my $addr = $$self{'hub'}->path_to_addr($path) or die "Cannot find: $path\n";
-	my $out = $self->{'parser'}->compile($addr, @_);
-  die unless $$out;
+  my $content = file_read($path);
+	my $out = $self->{'parser'}->compile_text($content, @_);
+  die "Empty output when compiling $path" unless $$out;
   chomp $$out; $$out .= "\n";
   file_write($path, $out);
 }

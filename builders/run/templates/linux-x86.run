@@ -84,7 +84,7 @@ else
 fi
 
 res=3
-echo -n "Uncompressing: '$label'"
+echo -n "Uncompressing: '$label' "
 cd $workingdir;
 
 trap 'echo; echo "Signal caught, cleaning up" > /dev/tty; cd $TMPROOT; rm -rf $workingdir; exit 15' 1 2 15
