@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Documentatoin</title>
+  </head>
+  <body>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Module Name</th>
+          <th>Version</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#:for module in docs}
+        <tr>
+          <td><a href="{#module/html_filename}">{#module/name}</a></th>
+          <td>{#:join '.', module/version}</td>
+          <td></td>
+        </tr>
+        {#:end for}
+      </tbody>
+    </table>
+
+  </body>
+</html>
