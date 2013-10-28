@@ -1,4 +1,9 @@
-#!/usr/bin/bash
+#!/bin/bash
+
+if [ ! -d "${LSN_SRC_ROOT}" ]; then
+  echo "LSN_SRC_ROOT does not resolve to a directory, exiting"
+  exit 1
+fi
 
 libdir='/usr/lib/livesite'
 sharedir='/usr/share/livesite'
@@ -34,12 +39,14 @@ function _link_dir () {
   done
 }
 
+mkdir -p $libdir
 cd $libdir
 for i in `ls`; do unlink $i; done
 for dir in ${libsrc[@]}; do
   _link_subdirs "$dir"
 done
 
+mkdir -p $sharedir
 cd $sharedir
 for dir in ${sharesrc[@]}; do
   _link_dir "$dir"

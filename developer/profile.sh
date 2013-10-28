@@ -1,6 +1,6 @@
 # Environment
-  export LSN_SRC_ROOT='/usr/local/src/lsn'
-  export LSN_COMMON='/usr/local/src/lsn/lsn-build/common'
+  export LSN_SRC_ROOT="${HOME}/lsn"
+  export LSN_COMMON="${LSN_SRC_ROOT}/lsn-build/common"
   export PERLLIB="${LSN_SRC_ROOT}/lsn-data-hub/src/lib:${PERLLIB}"
   export PERLLIB="${LSN_SRC_ROOT}/lsn-www-hub/src/lib:${PERLLIB}"
 
