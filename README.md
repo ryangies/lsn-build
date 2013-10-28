@@ -11,6 +11,15 @@ Mac OS X Version 10.8.5
     brew install libgd
     curl -L http://cpanmin.us | perl - --sudo App::cpanminus
 
+    # Install perl prerequisites (below), then
+
+    cd ~/lsn/lsn-javascript/src/bin
+    make lsn-jsmin.c
+
+
+Prerequisites
+=============
+
     cd ~/lsn/livesite/out/livesite-d28/install
     perl prerequisites.pl
     # sudo cpanm ... (see the output of prerequisites.pl)
