@@ -9,6 +9,7 @@ use Data::Hub;
 use Data::Hub::Util qw(:all);
 use Parse::Template::Standard;
 use base 'App::Console::CommandScript';
+use Cwd qw(cwd);
 
 our %USAGE = ();
 
@@ -22,6 +23,10 @@ our %USAGE = ();
 
 sub new {
   my $self = shift->SUPER::new();
+  $self->{'cmd_parser'} = Parse::Template::Standard->new(
+    -begin => '${',
+    -end => '}'
+  );
   $self->{'cwd_path'} = shift;
   $self->{'app_path'} = shift;
   $self->{'cwd'} = Data::Hub->new($self->{'cwd_path'});
@@ -86,20 +91,15 @@ sub _compile {
 
     # Run pre-compile commands
     if (my $pre_compile = $$spec{'pre_compile'}) {
-      chdir $$builder{'proj_path'};
-      foreach my $cmd (@$pre_compile) {
-        $cmd =~ s/\[#options\]/$opts_str/;
-        warn "Running [pre-compile]: $cmd\n";
-        system split(/ /, $cmd);
-      }
-      chdir $$self{'cwd_path'};
+      $self->err_printf("%_^s\n", 'Running pre-compile commands');
+      $self->_run_commands($builder, $opts_str, @$pre_compile);
     }
 
     # File-system has changed
     $$builder{'hub'}->expire;
 
     # Compile
-    warnf "Compiling: %s...\n", $$builder{'cname'};
+    $self->_shout("Compiling %s...", $$builder{'cname'});
     $self->_invoke('compile', $worker);
 
     # File-system has changed
@@ -117,11 +117,8 @@ sub _compile {
 
     # Run post-compile commands
     if (my $post_compile = $$spec{'post_compile'}) {
-      foreach my $cmd (@$post_compile) {
-        $cmd =~ s/\[#options\]/$opts_str/;
-        warn "Running [post-compile]: $cmd\n";
-        system split(/ /, $cmd);
-      }
+      $self->err_printf("%_^s\n", 'Running post-compile commands');
+      $self->_run_commands($builder, $opts, @$post_compile);
     }
 
   }
@@ -148,7 +145,7 @@ sub dist {
   foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
     my ($spec, $pm, $builder) = @$worker;
     $self->_compile($worker, -opts => $opts);
-    warnf "Packaging: %s...\n", $$builder{'cname'};
+    $self->_shout("Packaging: %s...\n", $$builder{'cname'});
     $self->_invoke('dist', $worker);
     my $dist_fn = $builder->{'dist_fn'};
     if (defined $dist_fn && -f $dist_fn) {
@@ -173,7 +170,7 @@ sub upload {
   my $opts = my_opts(\@_);
   foreach my $worker ($self->_get_workers(@_, -opts => $opts)) {
     my ($spec, $pm, $builder) = @$worker;
-    warnf "Uploading: %s...\n", $$builder{'cname'};
+    $self->_shout("Uploading: %s...\n", $$builder{'cname'});
     $self->_invoke('upload', $worker);
   }
 }
@@ -240,10 +237,9 @@ sub _get_specs {
   my @specs = ();
   unshift @_, 'project.hf' unless @_;
   for (@_) {
-    my $path = path_join($$self{'cwd_path'}, $_);
-    my $file = FS('Node')->new($path) or
-      $self->fail("Cannot find build-spec: $path");
-    push @specs, $file;
+    my $path = path_is_absolute($_) ? $_ : path_join($$self{'cwd_path'}, $_);
+    $self->quit("Cannot find build-spec: $path") unless -f $path;
+    push @specs, FS('Node')->new($path);
   }
   @specs;
 }
@@ -304,7 +300,9 @@ sub _invoke {
   # We are calling $sub_name of the $builder class in such a way that the 
   # address './' will return the builder's directory.
   die "Method '$sub_name' not implemented!" unless $pm->{$sub_name};
+  $self->_chdir($$builder{'proj_path'});
   $pm->{$sub_name}($builder);
+  $self->_chdir($$self{'cwd_path'});
 }
 
 1;
@@ -326,6 +324,48 @@ sub _file_populate {
   file_write($path, $out);
 }
 
+# ------------------------------------------------------------------------------
+# _run_commands - 
+# ------------------------------------------------------------------------------
+
+sub _run_commands {
+  my $self = shift;
+  my $builder = shift;
+  my $opts_str = shift;
+  $self->_chdir($$builder{'proj_path'});
+  foreach my $cmd (@_) {
+    $cmd = $self->_expand_cmd($cmd, {'options' => $opts_str});
+    $self->printf("%_bs\n", "Command: $cmd");
+    my $rc = system split(/ /, $cmd);
+    $self->quit("Command failed [$rc], aborting...") unless $rc == 0;
+  }
+  $self->_chdir($$self{'cwd_path'});
+}
+
+# ------------------------------------------------------------------------------
+# _expand_cmd - Expand environment variables in command-line commands
+# ------------------------------------------------------------------------------
+
+sub _expand_cmd {
+  my $self = shift;
+  my $cmd = shift;
+  my $result = $$self{'cmd_parser'}->compile_text(\$cmd, \%ENV, @_);
+  $$result;
+}
+
+sub _chdir {
+  my $self = shift;
+  my $dir = shift;
+  #$self->err_printf("%_*s\n", "CHDIR $dir");
+  chdir $dir or die "$!: $dir";
+  
+}
+
+sub _shout {
+  my $self = shift;
+  my $msg = shift;
+  $self->err_printf("%_*s\n", sprintf($msg, @_));
+}
 
 # ==============================================================================
 
