@@ -185,7 +185,7 @@ sub _build_docs_and_tests {
     my $fn = $pkg->{'name'}; $fn =~ s/::/\//g;
     my $pod_out = $template_parser->compile("/pod/package.pod", $pkg);
     $$self{'out_hub'}->set("/lib/$fn.pod", $pod_out)->save();
-    _pod2html("$out_path/lib/$fn.pod", "$doc_dir/$pn.html", $pkg->{'name'});
+    _pod2html("$out_path/lib", "$out_path/lib/$fn.pod", "$doc_dir/$pn.html", $pkg->{'name'});
     $$pkg{'html_filename'} = "$pn.html"; # for index.html template
   });
 
@@ -228,10 +228,13 @@ sub _build_docs_and_tests {
 }
 
 sub _pod2html {
-  my ($podfn, $htmlfn, $title) = @_;
+  my ($podroot, $podfn, $htmlfn, $title) = @_;
+# warnf "$podfn\n";
   pod2html( 
+    "--podroot=$podroot",
     '--flush',
-    '--backlink=Top',
+    '--quiet',
+    '--backlink',
     "--title=$title",
     "--css=styles.css",
     "--infile=$podfn",
