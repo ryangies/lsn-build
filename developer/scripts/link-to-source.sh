@@ -41,13 +41,17 @@ function _link_dir () {
 
 mkdir -p $libdir
 cd $libdir
-for i in `ls`; do unlink $i; done
-for dir in ${libsrc[@]}; do
-  _link_subdirs "$dir"
-done
+if [ "$(pwd)" == "$libdir" ]; then
+  for i in `ls`; do unlink $i; done
+  for dir in ${libsrc[@]}; do
+    _link_subdirs "$dir"
+  done
+fi
 
 mkdir -p $sharedir
 cd $sharedir
-for dir in ${sharesrc[@]}; do
-  _link_dir "$dir"
-done
+if [ "$(pwd)" == "$sharedir" ]; then
+  for dir in ${sharesrc[@]}; do
+    _link_dir "$dir"
+  done
+fi
