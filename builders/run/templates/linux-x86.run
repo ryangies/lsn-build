@@ -3,11 +3,13 @@
 function usage () {
   name=$(basename $0)
   echo "usage:"
-  echo "  $name {install|uninstall|extract}"
+  echo "  $name [-y] {install|uninstall|extract}"
+  echo "options:"
 }
 
 script=
 opt_extract=false
+opt_interactive=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,6 +21,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     extract)
       opt_extract=true
+      ;;
+    -y|--yes)
+      opt_interactive=false
       ;;
     *)
       echo "Unknown parameter: $1"
@@ -48,14 +53,18 @@ workingdir="$TMPROOT/install$$"
 
 function ask_yn () {
   local yn=false;
-  prompt="$1 [n] "
-  while true; do
-    read -p "$prompt" chr
-    case $chr in
-      [Yy]* ) yn=true; break;;
-      * ) yn=false; break;;
-    esac
-  done
+  if ($opt_interactive); then
+    prompt="$1 [n] "
+    while true; do
+      read -p "$prompt" chr
+      case $chr in
+        [Yy]* ) yn=true; break;;
+        * ) yn=false; break;;
+      esac
+    done
+  else
+    yn=true
+  fi
   if ($yn); then
     return 0
   else
@@ -64,8 +73,10 @@ function ask_yn () {
 }
 
 function pause () {
-  prompt="Press [ENTER] to continue: "
-  read -p "$prompt" chr
+  if ($opt_interactive); then
+    prompt="Press [ENTER] to continue: "
+    read -p "$prompt" chr
+  fi
 }
 
 untar_stdin () {
@@ -96,7 +107,11 @@ if (cd "$rundir"; tail -n +$skip $0; ) | gzip -cd | untar_stdin | (while read a;
     exit 0
   fi
   if [ -f $script ]; then
-    /bin/bash $script
+    if ($opt_interactive); then
+      /bin/bash $script -y
+    else
+      /bin/bash $script
+    fi
     res=$?
   else
     echo "Missing script: $script"

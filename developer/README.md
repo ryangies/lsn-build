@@ -4,6 +4,10 @@ Developer
 Environment
 -----------
 
+Presuming you cloned each project under `~/lsn`:
+
+Link `/usr/local/src/lsn` to `~/lsn`
+
 Copy `./profile.sh` to `/etc/profile.d/livesite.sh` (or otherwise inlcude
 it in your environment).
 
