@@ -108,9 +108,9 @@ if (cd "$rundir"; tail -n +$skip $0; ) | gzip -cd | untar_stdin | (while read a;
   fi
   if [ -f $script ]; then
     if ($opt_interactive); then
-      /bin/bash $script -y
-    else
       /bin/bash $script
+    else
+      /bin/bash $script -y
     fi
     res=$?
   else
