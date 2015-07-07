@@ -82,7 +82,6 @@ sub _compile {
   my $worker = shift;
   my ($spec, $pm, $builder) = @$worker;
   my $out_path = $builder->{'out_path'};
-  my $opts_str = join ' ', map {sprintf('-%s=%s', $_, $$opts{$_})} keys %$opts;
 
   if (($$builder{'is_new_build'}) || $$opts{'force'}) {
 
@@ -92,7 +91,7 @@ sub _compile {
     # Run pre-compile commands
     if (my $pre_compile = $$spec{'pre_compile'}) {
       $self->err_printf("%_^s\n", 'Running pre-compile commands');
-      $self->_run_commands($builder, $opts_str, @$pre_compile);
+      $self->_run_commands($builder, $opts, @$pre_compile);
     }
 
     # File-system has changed
@@ -172,6 +171,11 @@ sub upload {
     my ($spec, $pm, $builder) = @$worker;
     $self->_shout("Uploading: %s...\n", $$builder{'cname'});
     $self->_invoke('upload', $worker);
+    # Run post-upload commands
+    if (my $post_upload = $$spec{'post_upload'}) {
+      $self->err_printf("%_^s\n", 'Running post-upload commands');
+      $self->_run_commands($builder, $opts, @$post_upload);
+    }
   }
 }
 
@@ -331,10 +335,11 @@ sub _file_populate {
 sub _run_commands {
   my $self = shift;
   my $builder = shift;
-  my $opts_str = shift;
+  my $opts = shift;
+  my $opts_str = join ' ', map {sprintf('-%s=%s', $_, $$opts{$_})} keys %$opts;
   $self->_chdir($$builder{'proj_path'});
   foreach my $cmd (@_) {
-    $cmd = $self->_expand_cmd($cmd, {'options' => $opts_str});
+    $cmd = $self->_expand_cmd($cmd, $$builder{'spec'}, {'options' => $opts_str});
     $self->printf("%_bs\n", "Command: $cmd");
     my $rc = system split(/ /, $cmd);
     $self->quit("Command failed [$rc], aborting...") unless $rc == 0;
