@@ -103,8 +103,22 @@ function path_join () {
 # path_absolute '../relative/path'
 # ------------------------------------------------------------------------------
 function path_absolute () {
-  echo $(readlink -f "$1")
+  pushd . > /dev/null;
+  if [ -d "$1" ]; then
+    cd "$1";
+    dirs -l +0;
+  else
+    cd "`dirname \"$1\"`";
+    cur_dir=`dirs -l +0`;
+    if [ "$cur_dir" == "/" ]; then
+      echo "$cur_dir`basename \"$1\"`";
+    else
+      echo "$cur_dir/`basename \"$1\"`";
+    fi;
+  fi;
+  popd > /dev/null;
 }
+
 # ------------------------------------------------------------------------------
 # dir_absolute - Return the absolute path of the directory (must exist)
 # dir_absolute '../relative/path'
@@ -112,11 +126,9 @@ function path_absolute () {
 # When the provided path is to a file, its directory is returned
 # ------------------------------------------------------------------------------
 function dir_absolute () {
-  path=
-  if [ -d "$1" ]; then
-    path=$(readlink -f "$1")
-  elif [ -f "$1" ]; then
-    path=$(dirname "$(readlink -f "$1")")
+  path=$(path_absolute $1)
+  if [ ! -d "$path" ]; then
+    path=$(dirname "$path")
   fi
   echo $path
 }
@@ -133,7 +145,7 @@ function dir_absolute () {
 function most_recent () {
   path=""
   fn=$(basename "$1")
-  dir=$(readlink -f "$(dirname "$1")")
+  dir=$(path_absolute "$(dirname "$1")")
   path=$(find "$dir" -name "$fn*" | sort -n | tail -1)
   echo $path
 }
