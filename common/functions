@@ -155,8 +155,10 @@ function most_recent () {
 # ------------------------------------------------------------------------------
 function exit_unless_root_user () {
   if [ "$(id -u)" -ne "0" ]; then
-    echo "Only the root user should run these commands."
-    exit 1
+    if [ "$OSTYPE" != "cygwin" ]; then
+      echo "Only the root user should run these commands."
+      exit 1
+    fi
   fi
 }
 
