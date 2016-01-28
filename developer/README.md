@@ -16,6 +16,8 @@ Syntax
 
 Overlay `./vim` on top of your `~/.vim`.
 
+    rsync -a vim/ ~/.vim/
+
 Web Development
 ---------------
 
