@@ -128,6 +128,26 @@ sub dist {
 }
 
 # ------------------------------------------------------------------------------
+# upload - Upload the current distribution
+# ------------------------------------------------------------------------------
+
+sub upload {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $out_path = $self->{'out_base_path'};
+  my $cname = $self->{'cname'};
+  my $dist_fn = "$out_path/$cname.tgz";
+  if (-e $dist_fn) {
+    my $upload_path = $$self{'spec'}{'upload_path'} or die 'No upload path';
+    my $upload_cmd = $$self{'spec'}{'upload_cmd'} or die 'No upload command';
+    warn "$dist_fn -> $upload_path\n";
+    system $upload_cmd, $dist_fn, $upload_path;
+  } else {
+    warn "Cannot upload: missing distribution file: $dist_fn\n";
+  }
+}
+
+# ------------------------------------------------------------------------------
 
 sub _build_docs_and_tests {
 
