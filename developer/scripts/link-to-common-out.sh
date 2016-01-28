@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-scriptdir=$(readlink -f "$(dirname $(readlink -f $0))")
-proj_root=$(readlink -f "$scriptdir/../../")
-lsn_root=$(readlink -f "$proj_root/..")
+scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+proj_root="$( cd "$scriptdir/../../" && pwd )"
+lsn_root="$( cd "$proj_root/.." && pwd )"
 source "$scriptdir/functions"
 cd $proj_root
 
