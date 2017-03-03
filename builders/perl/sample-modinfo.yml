@@ -257,7 +257,7 @@ docs:
     App::TMS::Common: 0
     App::TMS::Debug: 0
     Cwd: 0
-    Data::Compare: 0
+    Data::Comparison: 0
     Data::Format::Hash: 0
     Data::Hub: 0
     Data::Hub::FileSystem::Node: 0
@@ -519,7 +519,7 @@ docs:
       summary: Update the target structure according to the diff
       tests: []
       usage: ''
-  name: Data::Compare
+  name: Data::Comparison
   path: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Data/Compare.pm
   seealso: ''
   summary: ''
@@ -538,7 +538,7 @@ docs:
   methods:
     private: []
     public: []
-  name: Data::Compare::Diff
+  name: Data::Comparison::Diff
   path: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Data/Compare.pm
   seealso: ''
   summary: ''
@@ -1434,7 +1434,7 @@ docs:
     Data::Hub::Util: 0
     Error::Programatic: 0
     Error::Simple: 0
-    Perl::Compare: 0
+    Perl::Comparison: 0
     Perl::Module: 0
   description: ''
   export: ''
@@ -1704,7 +1704,7 @@ docs:
   - 0
   - 0
 - depends:
-    Data::Compare: 0
+    Data::Comparison: 0
     Data::Format::Hash: 0
     Data::Hub::Util: 0
     Data::OrderedHash: 0
@@ -2166,7 +2166,7 @@ docs:
   - 0
   - 0
 - depends:
-    Data::Compare: 0
+    Data::Comparison: 0
     Data::Format::Hash: 0
     Data::Hub::Util: 0
     Parse::Padding: 0
@@ -2214,7 +2214,7 @@ docs:
     Data::Hub::Subset: 0
     Data::Hub::Util: 0
     Error::Logical: 0
-    Perl::Compare: 0
+    Perl::Comparison: 0
     Perl::Module: 0
   description: '
 
@@ -2235,7 +2235,7 @@ docs:
         'eq' operator is used in comparisons.\n\nIf C<key> contains C<( ) :> those
         character must be escaped with a backslash.\n\nIf C<val> contains C<}> it
         must be escaped with a backslash.\n\nThe operators available for C<opr> are
-        those implemented by L<Perl::Compare>:\n\n  Perl Operators (see L<perlop>)\n\n
+        those implemented by L<Perl::Comparison>:\n\n  Perl Operators (see L<perlop>)\n\n
         \   eq  =~  ==\n    ne  !~  !=\n    lt      <\n    le      <=\n    gt      >\n
         \   ge      >=\n\n  Extended operators\n\n    eqic    # Same as 'eq' however
         is case insensitive\n    neic    # Same as 'ne' however is case insensitive\n
@@ -5467,7 +5467,7 @@ docs:
     Data::Hub::Util: 0
     Error::Logical: 0
     Error::Programatic: 0
-    Perl::Compare: 0
+    Perl::Comparison: 0
     Perl::Module: 0
   description: ''
   export: ''
@@ -6209,7 +6209,7 @@ docs:
     Parse::Template::Content: 0
     Parse::Template::Directives::FileInfo: 0
     Parse::Template::ForLoop: 0
-    Perl::Compare: 0
+    Perl::Comparison: 0
     Perl::Module: 0
     Time::Piece: 0
     Time::Regex: 0
@@ -6606,7 +6606,7 @@ docs:
     - access: public
       description: "The key is the comparison operator. The value is the subroutine
         which is \nexecuted.\n\nIf you wanted to define an operator named C<opr>,
-        you would:\n\n\n  Perl::Compare::COMPARISONS{'opr'} = sub {\n    # your code
+        you would:\n\n\n  Perl::Comparison::COMPARISONS{'opr'} = sub {\n    # your code
         here\n  };\n\nYour comparison is invoked by:\n\n\n  compare('opr', 'a', 'b');\n\nAnd
         your subroutine will be passed C<'a'> and C<'b'>.  In fact, all arguments\nare
         passed, allowing you to write tertiary comparisons, such as:\n\n\n  compare('opr',
@@ -6639,7 +6639,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 125
         num: 274
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''eq'','''',undef);'
@@ -6648,7 +6648,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 126
         num: 275
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''eq'',''abc'',''abc'');'
@@ -6657,7 +6657,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 127
         num: 276
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''ne'',''abc'',''Abc'');'
@@ -6666,7 +6666,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 128
         num: 277
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''eq'',''abc'',undef);'
@@ -6675,7 +6675,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 129
         num: 278
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''!~'',''abc'',''A'');'
@@ -6684,7 +6684,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 130
         num: 279
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''=~'',''abc'',''a'');'
@@ -6693,7 +6693,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 131
         num: 280
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''=='',1234,1234);'
@@ -6702,7 +6702,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 132
         num: 281
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''>='',1234,1234);'
@@ -6711,7 +6711,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 133
         num: 282
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''eqic'',''abc'',''Abc'');'
@@ -6720,7 +6720,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 134
         num: 283
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''=='',undef,undef);'
@@ -6729,7 +6729,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 135
         num: 284
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''=='',0,undef);'
@@ -6738,7 +6738,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 136
         num: 285
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''!~i'',''abc'',''A'');'
@@ -6747,7 +6747,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 137
         num: 286
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''=~i'',''abc'',''A'');'
@@ -6756,7 +6756,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 138
         num: 287
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''eqic'',''abc'',''Abc'');'
@@ -6765,7 +6765,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 139
         num: 288
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''neic'',''abc'',''Abc'');'
@@ -6774,7 +6774,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 140
         num: 289
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''mod'',4,2);'
@@ -6783,7 +6783,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 141
         num: 290
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''bw'',''abc'',''a'');'
@@ -6792,7 +6792,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 142
         num: 291
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''bw'',''abc'',''b'');'
@@ -6801,7 +6801,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 143
         num: 292
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''ew'',''abc'',''b'');'
@@ -6810,7 +6810,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 144
         num: 293
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
         test: '  compare(''ew'',''abc'',''c'');'
@@ -6827,7 +6827,7 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 158
         num: 294
-        package: Perl::Compare
+        package: Perl::Comparison
         result: 1;2;10;20
         summary: ''
         test: "  my @numbers = ( 20, 1, 10, 2 );\n  join ';', sort { &sort_compare('<=>',$a,$b)
@@ -6847,16 +6847,16 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 180
         num: 295
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ''
         summary: ''
-        test: '  use Perl::Compare qw(sort_keydepth);'
+        test: '  use Perl::Comparison qw(sort_keydepth);'
       - comparator: match
         invert: 0
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 182
         num: 296
-        package: Perl::Compare
+        package: Perl::Comparison
         result: o/ne;t/w/o;th/r/e/e
         summary: The deepest elements come last
         test: '  join '';'', sort {&sort_keydepth($a, $b)} qw(t/w/o o/ne th/r/e/e);'
@@ -6865,20 +6865,20 @@ docs:
         lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
         lineno: 186
         num: 297
-        package: Perl::Compare
+        package: Perl::Comparison
         result: ;none;o/ne;t/w/o;th/r/e/e
         summary: Those without come after undefined but before those with
         test: "  no warnings 'uninitialized';\n  join ';', sort {&sort_keydepth($a,
           $b)} (qw(t/w/o o/ne none th/r/e/e), undef);"
       usage: ''
-  name: Perl::Compare
+  name: Perl::Comparison
   path: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   seealso: ''
   summary: 'Runtime access to perl comparison operators
 
 '
-  synopsis: "\n  use Perl::Compare qw(compare);\n  print compare('eq', 'abc', 'xyz')
-    ? \"True\\n\" : \"False\\n\";\n\n  use Perl::Compare qw(sort_compare);\n  my @items
+  synopsis: "\n  use Perl::Comparison qw(compare);\n  print compare('eq', 'abc', 'xyz')
+    ? \"True\\n\" : \"False\\n\";\n\n  use Perl::Comparison qw(sort_compare);\n  my @items
     = qw(The black cat climbed the green tree);\n  sort { &sort_compare('cmp', $a,
     $b) } @items;\n\n"
   tests: []
@@ -10325,7 +10325,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 125
   num: 274
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''eq'','''',undef);'
@@ -10334,7 +10334,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 126
   num: 275
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''eq'',''abc'',''abc'');'
@@ -10343,7 +10343,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 127
   num: 276
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''ne'',''abc'',''Abc'');'
@@ -10352,7 +10352,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 128
   num: 277
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''eq'',''abc'',undef);'
@@ -10361,7 +10361,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 129
   num: 278
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''!~'',''abc'',''A'');'
@@ -10370,7 +10370,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 130
   num: 279
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''=~'',''abc'',''a'');'
@@ -10379,7 +10379,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 131
   num: 280
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''=='',1234,1234);'
@@ -10388,7 +10388,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 132
   num: 281
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''>='',1234,1234);'
@@ -10397,7 +10397,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 133
   num: 282
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''eqic'',''abc'',''Abc'');'
@@ -10406,7 +10406,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 134
   num: 283
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''=='',undef,undef);'
@@ -10415,7 +10415,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 135
   num: 284
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''=='',0,undef);'
@@ -10424,7 +10424,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 136
   num: 285
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''!~i'',''abc'',''A'');'
@@ -10433,7 +10433,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 137
   num: 286
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''=~i'',''abc'',''A'');'
@@ -10442,7 +10442,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 138
   num: 287
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''eqic'',''abc'',''Abc'');'
@@ -10451,7 +10451,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 139
   num: 288
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''neic'',''abc'',''Abc'');'
@@ -10460,7 +10460,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 140
   num: 289
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''mod'',4,2);'
@@ -10469,7 +10469,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 141
   num: 290
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''bw'',''abc'',''a'');'
@@ -10478,7 +10478,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 142
   num: 291
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''bw'',''abc'',''b'');'
@@ -10487,7 +10487,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 143
   num: 292
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''ew'',''abc'',''b'');'
@@ -10496,7 +10496,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 144
   num: 293
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
   test: '  compare(''ew'',''abc'',''c'');'
@@ -10505,7 +10505,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 158
   num: 294
-  package: Perl::Compare
+  package: Perl::Comparison
   result: 1;2;10;20
   summary: ''
   test: "  my @numbers = ( 20, 1, 10, 2 );\n  join ';', sort { &sort_compare('<=>',$a,$b)
@@ -10515,16 +10515,16 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 180
   num: 295
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ''
   summary: ''
-  test: '  use Perl::Compare qw(sort_keydepth);'
+  test: '  use Perl::Comparison qw(sort_keydepth);'
 - comparator: match
   invert: 0
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 182
   num: 296
-  package: Perl::Compare
+  package: Perl::Comparison
   result: o/ne;t/w/o;th/r/e/e
   summary: The deepest elements come last
   test: '  join '';'', sort {&sort_keydepth($a, $b)} qw(t/w/o o/ne th/r/e/e);'
@@ -10533,7 +10533,7 @@ tests:
   lib: /home/ryan/lsn/lsn-data-hub/out/lsn-data-hub-05.00269/lib/Perl/Compare.pm
   lineno: 186
   num: 297
-  package: Perl::Compare
+  package: Perl::Comparison
   result: ;none;o/ne;t/w/o;th/r/e/e
   summary: Those without come after undefined but before those with
   test: "  no warnings 'uninitialized';\n  join ';', sort {&sort_keydepth($a, $b)}
