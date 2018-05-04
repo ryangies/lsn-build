@@ -72,7 +72,7 @@ sub dist {
   file_copy($skel, $dist_fn_txt);
 
   # Determine how many lines of script need to be skipped
-  my ($lines) = `wc -l "$dist_fn_txt"` =~ /^(\d+)/;
+  my ($lines) = `wc -l "$dist_fn_txt"` =~ /^\s*(\d+)/;
 
   # Recognize file-system changes
   $$self{'hub'}->expire;
